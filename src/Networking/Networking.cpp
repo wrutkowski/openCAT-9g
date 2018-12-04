@@ -54,7 +54,7 @@ void Networking::setup_webSocket(WebSocketReceivedTextEvent onReceivedText) {
 }
 
 void Networking::loop() {
-    
+
     webSocket.loop();
     webServer.handleClient();
 }
@@ -77,7 +77,7 @@ void Networking::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, s
             break;
 
         case WStype_TEXT: {
-            Serial.printf("[%u] get Text: %s\n", num, payload);
+            // Serial.printf("[%u] get Text: %s\n", num, payload);
 
             onWebSocketReceivedText(payload);
 

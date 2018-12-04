@@ -9,6 +9,8 @@
 class Movement {
 
 public:
+    Movement (float femurLength, float tibiaLength) :
+        inverseKinematics(femurLength, tibiaLength) {};
     void standUp();
     void layDown();
     void setLeg(LEG leg, float x, float y, float z, float yaw, float pitch, float roll);

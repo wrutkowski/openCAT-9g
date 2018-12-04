@@ -1,20 +1,26 @@
 #ifndef InverseKinematics_h
 #define InverseKinematics_h
 
-#include <Arduino.h>
+#include <math.h>
 #include "Leg.h"
 
 struct InverseKinematicsModel {
-    float hip;
+    float shoulderPivotSides;
+    float shoulderPivot;
     float knee;
-    float ankle;
 };
 
 class InverseKinematics {
 
 public:
+    InverseKinematics(float femurLength_, float tibiaLength_) :
+        femurLength(femurLength_),
+        tibiaLength(tibiaLength_) {};
     InverseKinematicsModel model(LEG leg, float x, float y, float z, float yaw, float pitch, float roll);
 
+private:
+    float femurLength;
+    float tibiaLength;
 };
 
 #endif

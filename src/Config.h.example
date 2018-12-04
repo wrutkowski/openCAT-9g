@@ -1,0 +1,10 @@
+#ifndef Config_h
+#define Config_h
+
+const char* APssid = "";      // SSID of created Access Point
+const char* APpassword = "";
+const char* ssid = "";        // SSID of the network openCAT will try to connect to
+const char* password = "";
+const char* host = "";        // Host used for DNS to access WebServer and WebSocket of openCAT
+
+#endif
