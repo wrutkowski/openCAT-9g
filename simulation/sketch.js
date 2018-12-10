@@ -64,36 +64,32 @@ var animation = ['none'];//, 'walk forward', 'walk forward 2', 'stand', 'sit', '
 var animationTimer;
 
 function computeXYZToAngles(x, y, z) {
-	// var z = -z;
+
 	// console.log("x = " + x + ", y = " + y + ", z = " + z);
 
-	var z = -z;
     var L = sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
 
     var theta = acos((pow(femurLength, 2) + pow(tibiaLength, 2) - pow(L, 2)) / (2 * femurLength * tibiaLength));
 
-    var knee1 = acos((pow(L, 2) + pow(femurLength, 2) - pow(tibiaLength, 2)) / (2 * L * femurLength));
-    var knee2 = acos((pow(L, 2) + pow(z, 2) - pow(x, 2)) / (2 * L * z) );
-    var beta = knee1 + knee2;
+    var shoulderPivot1 = acos((pow(L, 2) + pow(femurLength, 2) - pow(tibiaLength, 2)) / (2 * L * femurLength));
+    var shoulderPivot2 = -atan2(x, z);
+	var beta = shoulderPivot1 + shoulderPivot2;
+	// console.log("beta: " + beta + " = " + shoulderPivot1 + " + " + shoulderPivot2);
 
     var alpha = atan2(y, L);
-
-	// var alpha = atan2(y, x);
-	//
-	// var L1 = sqrt(pow(x, 2) + pow(y, 2));
-	// var L = sqrt(pow(L1 - hipLength, 2) + pow(z, 2));
-	// var beta = acos(z / L) + acos((pow(thighLength, 2) + pow(L, 2) - pow(tibiaLength, 2)) / (2 * thighLength * L));
-	// var theta = acos((pow(tibiaLength, 2) + pow(thighLength, 2) - pow(L, 2)) / (2 * tibiaLength * thighLength));
 
 	if (isNaN(alpha) || isNaN(beta) || isNaN(theta)) {
 		// console.log("Warning! Position not reachable.");
 		return undefined
 	} else {
 		alpha = degrees(alpha);
-		beta = degrees(beta) - 90;
+		if (x >= 0) {
+			beta += 2 * Math.PI;
+		}
+		beta = degrees(beta) + 90;
 		theta = degrees(theta) - 180;
 
-		// console.log("LEG: " + alpha + ", " + beta + ", " + theta);
+		// console.log("LEG: " + alpha + ", " + (beta - 90) + ", " + (theta + 180));
 		return {"alpha": alpha, "beta": beta, "theta": theta};
 	}
 }
@@ -104,7 +100,6 @@ function setLeg(legNumber, x, y, z) {
 		setLeg1y = y * L;
 		setLeg1z = z * L;
 	} else if (legNumber == 2) {
-		var t = x; x = y; y = t;
 		setLeg2x = x * L;
 		setLeg2y = y * L;
 		setLeg2z = z * L;
@@ -113,7 +108,6 @@ function setLeg(legNumber, x, y, z) {
 		setLeg3y = y * L;
 		setLeg3z = z * L;
 	} else if (legNumber == 4) {
-		var t = x; x = y; y = t;
 		setLeg4x = x * L;
 		setLeg4y = y * L;
 		setLeg4z = z * L;
@@ -429,7 +423,7 @@ function windowResized() {
 
 function setup() {
     createCanvas(windowWidth, windowHeight, WEBGL);
-
+	frameRate(1);
     // gui
 	gui = createGui('Info');
 	gui.prototype.addHTML("QUADRUPED", "Inverse Kinematics implemented on openCAT-9g");
@@ -506,38 +500,11 @@ function setup() {
     var cameraZ = (height/2.0) / tan(fov/2.0);
     perspective(60 / 180 * PI, width/height, cameraZ * 0.1, cameraZ * 10);
 
-
-
-
 			// console.log("0.2, 0.05, -0.473 -> "); computeXYZToAngles2(0.2 * L, 0.05 * L, -0.473 * L);
 			// console.log("0.05, 0.2, -0.473 -> "); computeXYZToAngles2(0.05 * L, 0.2 * L, -0.473 * L);
 			// console.log("0.2, 0.35, -0.473 -> "); computeXYZToAngles2(0.2 * L, 0.35 * L, -0.473 * L);
 			// console.log("0.05, 0.35, -0.473 -> "); computeXYZToAngles2(0.05 * L, 0.35 * L, -0.473 * L);
 }
-
-// function computeXYZToAngles2(x, y, z) {
-// 	var z = -z;
-// 	console.log("x = " + x + ", y = " + y + ", z = " + z);
-//
-// 	var alpha = atan2(y, x);
-//
-// 	var L1 = sqrt(pow(x, 2) + pow(y, 2));
-// 	var L = sqrt(pow(L1 - hipLength, 2) + pow(z, 2));
-// 	var beta = acos(z / L) + acos((pow(thighLength, 2) + pow(L, 2) - pow(tibiaLength, 2)) / (2 * thighLength * L));
-// 	var theta = acos((pow(tibiaLength, 2) + pow(thighLength, 2) - pow(L, 2)) / (2 * tibiaLength * thighLength));
-//
-// 	if (isNaN(alpha) || isNaN(beta) || isNaN(theta)) {
-// 		console.log("Warning! Position not reachable.");
-// 		return undefined
-// 	} else {
-// 		alpha = degrees(alpha);
-// 		beta = degrees(beta) - 90;
-// 		theta = degrees(theta) - 180;
-//
-// 		console.log("LEG: " + alpha + ", " + beta + ", " + theta);
-// 		return {"alpha": alpha, "beta": beta, "theta": theta};
-// 	}
-// }
 
 function draw() {
 	if (animation != robotAnimation) {
@@ -731,33 +698,29 @@ function draw() {
 }
 
 function drawLeg(legAlpha, legBeta, legTheta, legX, legY, legZ) {
-	// leg 1 hip
 	push();
-	// ambientMaterial(100, 255, 100);
-	// translate(hipLength / 2, 0, 0);
+	// leg sholderPivotSides
 	rotateX(radians(legAlpha));
-	// translate(hipLength / 2, 0, 0);
-	// box(hipLength, 24, 24);
-	// translate(hipLength / 2, 0, 0);
 
-	// leg 1 thigh
+	// leg femur
 	ambientMaterial(255, 100, 100);
 	translate(femurLength * 0.5 * cos(radians(legBeta)), 0, femurLength * 0.5 * sin(radians(legBeta)));
 	rotateY(radians(-legBeta));
 	box(femurLength, 22, 22);
 	translate(femurLength / 2, 0, 0);
 
-	// leg 1 tibia
+	// leg tibia
 	ambientMaterial(100, 100, 255);
 	translate(tibiaLength * 0.5 * cos(radians(legTheta)), 0, tibiaLength * 0.5 * sin(radians(legTheta)));
 	rotateY(radians(-legTheta));
 	box(tibiaLength, 20, 20);
+
 	pop();
 
 	// possible movement
 	// fill(255, 255, 255, 20); sphere(L);
 
-	// leg 1 X Y Z point
+	// leg X Y Z point
 	push();
 	fill(255);
 	translate(legX, legY, legZ);

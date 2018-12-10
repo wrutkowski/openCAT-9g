@@ -51,8 +51,7 @@ void onReceivedText(uint8_t *payload) {
     }
 
     movement.setLeg(FRONT_LEFT, x, y, z, 0, 0, 0);
-    // movement.setLeg(FRONT_RIGHT, x, y, z, 0, 0, 0);
-    // movement.setLeg(REAR_LEFT, x, y, z, 0, 0, 0);
-    // movement.setLeg(REAR_RIGHT, x, y, z, 0, 0, 0);
-    // movement.standUp();
+    movement.setLeg(FRONT_RIGHT, x, y, z, 0, 0, 0);
+    movement.setLeg(REAR_LEFT, x, y, z, 0, 0, 0);
+    movement.setLeg(REAR_RIGHT, x, y, z, 0, 0, 0);
 }

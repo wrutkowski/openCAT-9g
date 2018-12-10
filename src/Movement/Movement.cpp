@@ -15,9 +15,11 @@ void Movement::layDown() {
 
 void Movement::setLeg(LEG leg, float x, float y, float z, float yaw, float pitch, float roll) {
 
-    Serial.printf("setLeg: %d => x: %f, y: %f, z: %f\n", leg, x, y, z);
+    // Serial.printf("setLeg: %d => x: %f, y: %f, z: %f\n", leg, x, y, z);
 
     InverseKinematicsModel ik = inverseKinematics.model(leg, x, y, z, yaw, pitch, roll);
+
+    // Serial.printf("ik => shoulderPivotSides: %f, shoulderPivot: %f, knee: %f\n", ik.shoulderPivotSides, ik.shoulderPivot, ik.knee);
 
     // unreachable position
     if (isnan(ik.shoulderPivotSides) || isnan(ik.shoulderPivot) || isnan(ik.knee)) {
@@ -25,53 +27,57 @@ void Movement::setLeg(LEG leg, float x, float y, float z, float yaw, float pitch
         return;
     }
 
+    // adjust angles for servo mount setting
+    if (x >= 0) {
+        ik.shoulderPivot += 2 * M_PI;
+    }
+    ik.shoulderPivot -= 0.7 * M_PI;
+
+    InverseKinematicsModel ikDegrees = InverseKinematicsModel{ik.shoulderPivotSides * 180.0 / M_PI, ik.shoulderPivot * 180.0 / M_PI, ik.knee * 180.0 / M_PI};
+
+    // Serial.printf("ikDegrees => shoulderPivotSides: %f, shoulderPivot: %f, knee: %f\n", ikDegrees.shoulderPivotSides, ikDegrees.shoulderPivot, ikDegrees.knee);
+
     // meachnical constrains
-    if (ik.shoulderPivotSides < 17.5 || ik.shoulderPivotSides > 17.5) {
-        Serial.println("Incorrect position: meachnical constrains");
+    if (ikDegrees.shoulderPivotSides < -17.5 || ikDegrees.shoulderPivotSides > 17.5) {
+        Serial.printf("Incorrect position: meachnical constrains on shoulderPivotSides. Requested %f, for allowed range <%f, %f>\n", ikDegrees.shoulderPivotSides, -17.5, 17.5);
         return;
     }
-    if (ik.shoulderPivot < 43.5 || ik.shoulderPivot > 130) {
-        Serial.println("Incorrect position: meachnical constrains");
+    if (ikDegrees.shoulderPivot < 43.5 || ikDegrees.shoulderPivot > 130) {
+        Serial.printf("Incorrect position: meachnical constrains on shoulderPivot. Requested %f, for allowed range <%f, %f>\n", ikDegrees.shoulderPivot, 43.5, 130.0);
         return;
     }
-    if (ik.knee < 17 || ik.knee > 160) {
-        Serial.println("Incorrect position: meachnical constrains");
+    if (ikDegrees.knee < 17 || ikDegrees.knee > 160) {
+        Serial.printf("Incorrect position: meachnical constrains on knee. Requested %f, for allowed range <%f, %f>\n", ikDegrees.knee, 17.0, 160.0);
         return;
     }
 
     uint8_t legNumber = legNumberFor(leg);
-    uint8_t hipServoSubIndex, kneeServoSubIndex, ankleServoSubIndex;
+    uint8_t shoulderPivotSidesServoSubIndex = 0, shoulderPivotServoSubIndex = 0, kneeServoSubIndex = 0;
     switch (leg) {
         case FRONT_LEFT:
-            hipServoSubIndex = 2;
-            kneeServoSubIndex = 1;
-            ankleServoSubIndex = 0;
-
-            ik.shoulderPivotSides *= -1;
-
+            shoulderPivotSidesServoSubIndex = 2;
+            shoulderPivotServoSubIndex = 1;
+            kneeServoSubIndex = 0;
             break;
         case FRONT_RIGHT:
-            hipServoSubIndex = 1;
-            kneeServoSubIndex = 0;
-            ankleServoSubIndex = 2;
+            shoulderPivotSidesServoSubIndex = 1;
+            shoulderPivotServoSubIndex = 0;
+            kneeServoSubIndex = 2;
             break;
         case REAR_LEFT:
-            hipServoSubIndex = 1;
-            kneeServoSubIndex = 2;
-            ankleServoSubIndex = 0;
-
-            ik.shoulderPivotSides *= -1;
-
+            shoulderPivotSidesServoSubIndex = 1;
+            shoulderPivotServoSubIndex = 2;
+            kneeServoSubIndex = 0;
             break;
         case REAR_RIGHT:
-            hipServoSubIndex = 1;
-            kneeServoSubIndex = 0;
-            ankleServoSubIndex = 2;
+            shoulderPivotSidesServoSubIndex = 1;
+            shoulderPivotServoSubIndex = 0;
+            kneeServoSubIndex = 2;
             break;
     }
-    servoController.setAngle(legNumber * 4 + hipServoSubIndex, ik.shoulderPivotSides);
-    servoController.setAngle(legNumber * 4 + kneeServoSubIndex, ik.shoulderPivot);
-    servoController.setAngle(legNumber * 4 + ankleServoSubIndex, ik.knee);
+    servoController.setAngle(legNumber * 4 + shoulderPivotSidesServoSubIndex, ik.shoulderPivotSides);
+    servoController.setAngle(legNumber * 4 + shoulderPivotServoSubIndex, ik.shoulderPivot);
+    servoController.setAngle(legNumber * 4 + kneeServoSubIndex, ik.knee);
 }
 
 uint8_t Movement::legNumberFor(LEG leg) {
